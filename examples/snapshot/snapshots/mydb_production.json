@@ -1,0 +1,2449 @@
+{
+  "metadata": {
+    "timestamp": "2025-11-03T22:09:12.046405-03:00",
+    "version": "1.0",
+    "databaseName": "mydb",
+    "databaseEngine": "POSTGRES",
+    "hostInfo": "localhost:5432",
+    "tags": {
+      "environment": "production",
+      "purpose": "pre-migration"
+    },
+    "description": "Production database snapshot before migration",
+    "checksumMd5": "5d84ec9e195e4b3e7cf4e4243f420802",
+    "checksumSha256": "313479da336e200b9f809d5f2965a5d66ba509fd2235ec63c5bf512bf6af24b8"
+  },
+  "schema": {
+    "name": "mydb",
+    "searchPath": [
+      "$user",
+      "public"
+    ],
+    "schemas": [
+      {
+        "name": "public",
+        "tables": [
+          {
+            "name": "approvals",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "issue_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "approver_id",
+                "position": 3,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "status",
+                "position": 4,
+                "type": "character varying(50)",
+                "nullable": false
+              },
+              {
+                "name": "comments",
+                "position": 5,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "approved_at",
+                "position": 6,
+                "type": "timestamp with time zone",
+                "nullable": true
+              },
+              {
+                "name": "created_at",
+                "position": 7,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              }
+            ],
+            "indexes": [
+              {
+                "name": "approvals_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "idx_approvals_approver",
+                "type": "BTREE",
+                "expressions": [
+                  "approver_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_approvals_created_at",
+                "type": "BTREE",
+                "expressions": [
+                  "created_at DESC"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_approvals_issue",
+                "type": "BTREE",
+                "expressions": [
+                  "issue_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_approvals_status",
+                "type": "BTREE",
+                "expressions": [
+                  "status"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "unique_approval_per_user_issue",
+                "type": "BTREE",
+                "expressions": [
+                  "issue_id",
+                  "approver_id"
+                ],
+                "primary": false,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_approvals_approver",
+                "columns": [
+                  "approver_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_approvals_issue",
+                "columns": [
+                  "issue_id"
+                ],
+                "referencedTable": "public.issues",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_approval_status",
+                "expression": "((status)::text = ANY ((ARRAY['Approved'::character varying, 'Rejected'::character varying, 'Pending'::character varying])::text[]))"
+              }
+            ],
+            "indexSize": 57344
+          },
+          {
+            "name": "audit_logs",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "user_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "action",
+                "position": 3,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "resource_type",
+                "position": 4,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "resource_id",
+                "position": 5,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "details",
+                "position": 6,
+                "type": "jsonb",
+                "nullable": true
+              },
+              {
+                "name": "ip_address",
+                "position": 7,
+                "type": "inet",
+                "nullable": true
+              },
+              {
+                "name": "user_agent",
+                "position": 8,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "timestamp",
+                "position": 9,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              }
+            ],
+            "indexes": [
+              {
+                "name": "audit_logs_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "idx_audit_logs_action",
+                "type": "BTREE",
+                "expressions": [
+                  "action"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_audit_logs_details",
+                "type": "GIN",
+                "expressions": [
+                  "details"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_audit_logs_resource",
+                "type": "BTREE",
+                "expressions": [
+                  "resource_type",
+                  "resource_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_audit_logs_timestamp",
+                "type": "BTREE",
+                "expressions": [
+                  "\"timestamp\" DESC"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_audit_logs_user",
+                "type": "BTREE",
+                "expressions": [
+                  "user_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_audit_logs_user",
+                "columns": [
+                  "user_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "indexSize": 65536
+          },
+          {
+            "name": "database_instances",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "name",
+                "position": 2,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "description",
+                "position": 3,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "database_type",
+                "position": 4,
+                "type": "character varying(50)",
+                "nullable": false
+              },
+              {
+                "name": "host",
+                "position": 5,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "port",
+                "position": 6,
+                "type": "integer",
+                "nullable": false
+              },
+              {
+                "name": "username",
+                "position": 7,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "connection_details_encrypted",
+                "position": 8,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "use_rds_iam_auth",
+                "position": 9,
+                "type": "boolean",
+                "nullable": true,
+                "default": "false"
+              },
+              {
+                "name": "require_ssl",
+                "position": 10,
+                "type": "boolean",
+                "nullable": true,
+                "default": "true"
+              },
+              {
+                "name": "status",
+                "position": 11,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'Active'::character varying"
+              },
+              {
+                "name": "created_at",
+                "position": 12,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "updated_at",
+                "position": 13,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "created_by_id",
+                "position": 14,
+                "type": "uuid",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "database_instances_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "idx_instances_created_by",
+                "type": "BTREE",
+                "expressions": [
+                  "created_by_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_instances_name",
+                "type": "BTREE",
+                "expressions": [
+                  "name"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_instances_status",
+                "type": "BTREE",
+                "expressions": [
+                  "status"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_instances_type",
+                "type": "BTREE",
+                "expressions": [
+                  "database_type"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_instances_created_by",
+                "columns": [
+                  "created_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_database_type",
+                "expression": "((database_type)::text = ANY ((ARRAY['mysql'::character varying, 'postgresql'::character varying])::text[]))"
+              },
+              {
+                "name": "check_instance_status",
+                "expression": "((status)::text = ANY ((ARRAY['Active'::character varying, 'Inactive'::character varying, 'Maintenance'::character varying])::text[]))"
+              }
+            ],
+            "triggers": [
+              {
+                "name": "update_database_instances_updated_at",
+                "event": "UPDATE",
+                "timing": "BEFORE",
+                "body": "CREATE TRIGGER update_database_instances_updated_at BEFORE UPDATE ON public.database_instances FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()"
+              }
+            ],
+            "indexSize": 49152
+          },
+          {
+            "name": "databases",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "project_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "database_instance_id",
+                "position": 3,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "environment_id",
+                "position": 4,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "database_name",
+                "position": 5,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "description",
+                "position": 6,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "position": 7,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'Active'::character varying"
+              },
+              {
+                "name": "created_at",
+                "position": 8,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "updated_at",
+                "position": 9,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "created_by_id",
+                "position": 10,
+                "type": "uuid",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "databases_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "idx_databases_created_by",
+                "type": "BTREE",
+                "expressions": [
+                  "created_by_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_databases_environment",
+                "type": "BTREE",
+                "expressions": [
+                  "environment_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_databases_instance",
+                "type": "BTREE",
+                "expressions": [
+                  "database_instance_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_databases_project",
+                "type": "BTREE",
+                "expressions": [
+                  "project_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_databases_status",
+                "type": "BTREE",
+                "expressions": [
+                  "status"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "unique_database_per_instance",
+                "type": "BTREE",
+                "expressions": [
+                  "database_instance_id",
+                  "database_name"
+                ],
+                "primary": false,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_databases_created_by",
+                "columns": [
+                  "created_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_databases_environment",
+                "columns": [
+                  "environment_id"
+                ],
+                "referencedTable": "public.environments",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_databases_instance",
+                "columns": [
+                  "database_instance_id"
+                ],
+                "referencedTable": "public.database_instances",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_databases_project",
+                "columns": [
+                  "project_id"
+                ],
+                "referencedTable": "public.projects",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_database_status",
+                "expression": "((status)::text = ANY ((ARRAY['Active'::character varying, 'Inactive'::character varying])::text[]))"
+              }
+            ],
+            "triggers": [
+              {
+                "name": "update_databases_updated_at",
+                "event": "UPDATE",
+                "timing": "BEFORE",
+                "body": "CREATE TRIGGER update_databases_updated_at BEFORE UPDATE ON public.databases FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()"
+              }
+            ],
+            "indexSize": 65536
+          },
+          {
+            "name": "environments",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "name",
+                "position": 2,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "description",
+                "position": 3,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "position": 4,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'Active'::character varying"
+              },
+              {
+                "name": "created_at",
+                "position": 5,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "updated_at",
+                "position": 6,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "created_by_id",
+                "position": 7,
+                "type": "uuid",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "environments_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "idx_environments_created_by",
+                "type": "BTREE",
+                "expressions": [
+                  "created_by_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_environments_name",
+                "type": "BTREE",
+                "expressions": [
+                  "name"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_environments_status",
+                "type": "BTREE",
+                "expressions": [
+                  "status"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_environments_created_by",
+                "columns": [
+                  "created_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_environment_status",
+                "expression": "((status)::text = ANY ((ARRAY['Active'::character varying, 'Inactive'::character varying])::text[]))"
+              }
+            ],
+            "triggers": [
+              {
+                "name": "update_environments_updated_at",
+                "event": "UPDATE",
+                "timing": "BEFORE",
+                "body": "CREATE TRIGGER update_environments_updated_at BEFORE UPDATE ON public.environments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()"
+              }
+            ],
+            "indexSize": 40960
+          },
+          {
+            "name": "group_permissions",
+            "columns": [
+              {
+                "name": "group_id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "permission_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "granted_at",
+                "position": 3,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "granted_by_id",
+                "position": 4,
+                "type": "uuid",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "group_permissions_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "group_id",
+                  "permission_id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "idx_group_permissions_group",
+                "type": "BTREE",
+                "expressions": [
+                  "group_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_group_permissions_permission",
+                "type": "BTREE",
+                "expressions": [
+                  "permission_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_group_permissions_granted_by",
+                "columns": [
+                  "granted_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_group_permissions_group",
+                "columns": [
+                  "group_id"
+                ],
+                "referencedTable": "public.groups",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_group_permissions_permission",
+                "columns": [
+                  "permission_id"
+                ],
+                "referencedTable": "public.permissions",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "indexSize": 24576
+          },
+          {
+            "name": "groups",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "name",
+                "position": 2,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "description",
+                "position": 3,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "created_at",
+                "position": 4,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "updated_at",
+                "position": 5,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              }
+            ],
+            "indexes": [
+              {
+                "name": "groups_name_key",
+                "type": "BTREE",
+                "expressions": [
+                  "name"
+                ],
+                "primary": false,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "groups_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "idx_groups_name",
+                "type": "BTREE",
+                "expressions": [
+                  "name"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              }
+            ],
+            "triggers": [
+              {
+                "name": "update_groups_updated_at",
+                "event": "UPDATE",
+                "timing": "BEFORE",
+                "body": "CREATE TRIGGER update_groups_updated_at BEFORE UPDATE ON public.groups FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()"
+              }
+            ],
+            "indexSize": 32768
+          },
+          {
+            "name": "issues",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "project_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "target_database_id",
+                "position": 3,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "title",
+                "position": 4,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "description",
+                "position": 5,
+                "type": "text",
+                "nullable": false
+              },
+              {
+                "name": "change_type",
+                "position": 6,
+                "type": "character varying(50)",
+                "nullable": false
+              },
+              {
+                "name": "sql_content",
+                "position": 7,
+                "type": "text",
+                "nullable": false
+              },
+              {
+                "name": "rollback_sql",
+                "position": 8,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "position": 9,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'Draft'::character varying"
+              },
+              {
+                "name": "risk_level",
+                "position": 10,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'Medium'::character varying"
+              },
+              {
+                "name": "author_id",
+                "position": 11,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "assigned_reviewer_id",
+                "position": 12,
+                "type": "uuid",
+                "nullable": true
+              },
+              {
+                "name": "scheduled_for",
+                "position": 13,
+                "type": "timestamp with time zone",
+                "nullable": true
+              },
+              {
+                "name": "executed_at",
+                "position": 14,
+                "type": "timestamp with time zone",
+                "nullable": true
+              },
+              {
+                "name": "execution_duration_ms",
+                "position": 15,
+                "type": "integer",
+                "nullable": true
+              },
+              {
+                "name": "affected_rows",
+                "position": 16,
+                "type": "integer",
+                "nullable": true
+              },
+              {
+                "name": "error_message",
+                "position": 17,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "created_at",
+                "position": 18,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "updated_at",
+                "position": 19,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_issues_author",
+                "type": "BTREE",
+                "expressions": [
+                  "author_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_issues_created_at",
+                "type": "BTREE",
+                "expressions": [
+                  "created_at DESC"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_issues_database",
+                "type": "BTREE",
+                "expressions": [
+                  "target_database_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_issues_project",
+                "type": "BTREE",
+                "expressions": [
+                  "project_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_issues_reviewer",
+                "type": "BTREE",
+                "expressions": [
+                  "assigned_reviewer_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_issues_risk_level",
+                "type": "BTREE",
+                "expressions": [
+                  "risk_level"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_issues_scheduled",
+                "type": "BTREE",
+                "expressions": [
+                  "scheduled_for"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_issues_status",
+                "type": "BTREE",
+                "expressions": [
+                  "status"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "issues_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_issues_author",
+                "columns": [
+                  "author_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_issues_database",
+                "columns": [
+                  "target_database_id"
+                ],
+                "referencedTable": "public.databases",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_issues_project",
+                "columns": [
+                  "project_id"
+                ],
+                "referencedTable": "public.projects",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_issues_reviewer",
+                "columns": [
+                  "assigned_reviewer_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "SET NULL",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_change_type",
+                "expression": "((change_type)::text = ANY ((ARRAY['DDL'::character varying, 'DML'::character varying])::text[]))"
+              },
+              {
+                "name": "check_issue_status",
+                "expression": "((status)::text = ANY ((ARRAY['Draft'::character varying, 'PendingReview'::character varying, 'PendingApproval'::character varying, 'Approved'::character varying, 'Scheduled'::character varying, 'InProgress'::character varying, 'Completed'::character varying, 'Failed'::character varying, 'Cancelled'::character varying])::text[]))"
+              },
+              {
+                "name": "check_risk_level",
+                "expression": "((risk_level)::text = ANY ((ARRAY['Low'::character varying, 'Medium'::character varying, 'High'::character varying, 'Critical'::character varying])::text[]))"
+              }
+            ],
+            "triggers": [
+              {
+                "name": "update_issues_updated_at",
+                "event": "UPDATE",
+                "timing": "BEFORE",
+                "body": "CREATE TRIGGER update_issues_updated_at BEFORE UPDATE ON public.issues FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()"
+              }
+            ],
+            "indexSize": 81920
+          },
+          {
+            "name": "notifications",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "user_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "notification_type",
+                "position": 3,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "title",
+                "position": 4,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "position": 5,
+                "type": "text",
+                "nullable": false
+              },
+              {
+                "name": "related_resource_type",
+                "position": 6,
+                "type": "character varying(100)",
+                "nullable": true
+              },
+              {
+                "name": "related_resource_id",
+                "position": 7,
+                "type": "uuid",
+                "nullable": true
+              },
+              {
+                "name": "is_read",
+                "position": 8,
+                "type": "boolean",
+                "nullable": true,
+                "default": "false"
+              },
+              {
+                "name": "created_at",
+                "position": 9,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "read_at",
+                "position": 10,
+                "type": "timestamp with time zone",
+                "nullable": true
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_notifications_created_at",
+                "type": "BTREE",
+                "expressions": [
+                  "created_at DESC"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_notifications_unread",
+                "type": "BTREE",
+                "expressions": [
+                  "user_id",
+                  "is_read",
+                  "created_at"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_notifications_user",
+                "type": "BTREE",
+                "expressions": [
+                  "user_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "notifications_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_notifications_user",
+                "columns": [
+                  "user_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "indexSize": 40960
+          },
+          {
+            "name": "permissions",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "name",
+                "position": 2,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "description",
+                "position": 3,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "resource_type",
+                "position": 4,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "action",
+                "position": 5,
+                "type": "character varying(100)",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_permissions_resource",
+                "type": "BTREE",
+                "expressions": [
+                  "resource_type",
+                  "action"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "permissions_name_key",
+                "type": "BTREE",
+                "expressions": [
+                  "name"
+                ],
+                "primary": false,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "permissions_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "unique_permission",
+                "type": "BTREE",
+                "expressions": [
+                  "resource_type",
+                  "action"
+                ],
+                "primary": false,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "dataSize": 8192,
+            "indexSize": 73728
+          },
+          {
+            "name": "policy_violations",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "issue_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "violation_type",
+                "position": 3,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "severity",
+                "position": 4,
+                "type": "character varying(50)",
+                "nullable": false
+              },
+              {
+                "name": "rule_name",
+                "position": 5,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "position": 6,
+                "type": "text",
+                "nullable": false
+              },
+              {
+                "name": "line_number",
+                "position": 7,
+                "type": "integer",
+                "nullable": true
+              },
+              {
+                "name": "detected_at",
+                "position": 8,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_violations_issue",
+                "type": "BTREE",
+                "expressions": [
+                  "issue_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_violations_severity",
+                "type": "BTREE",
+                "expressions": [
+                  "severity"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "policy_violations_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_violations_issue",
+                "columns": [
+                  "issue_id"
+                ],
+                "referencedTable": "public.issues",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_severity",
+                "expression": "((severity)::text = ANY ((ARRAY['Info'::character varying, 'Warning'::character varying, 'Error'::character varying, 'Critical'::character varying])::text[]))"
+              },
+              {
+                "name": "check_violation_type",
+                "expression": "((violation_type)::text = ANY ((ARRAY['syntax_error'::character varying, 'security_risk'::character varying, 'performance_issue'::character varying, 'backwards_incompatible'::character varying, 'best_practice_violation'::character varying])::text[]))"
+              }
+            ],
+            "indexSize": 32768
+          },
+          {
+            "name": "project_members",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "project_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "user_id",
+                "position": 3,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "project_role",
+                "position": 4,
+                "type": "character varying(50)",
+                "nullable": false
+              },
+              {
+                "name": "added_at",
+                "position": 5,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "added_by_id",
+                "position": 6,
+                "type": "uuid",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_project_members_project",
+                "type": "BTREE",
+                "expressions": [
+                  "project_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_project_members_role",
+                "type": "BTREE",
+                "expressions": [
+                  "project_role"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_project_members_user",
+                "type": "BTREE",
+                "expressions": [
+                  "user_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "project_members_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "unique_project_user",
+                "type": "BTREE",
+                "expressions": [
+                  "project_id",
+                  "user_id"
+                ],
+                "primary": false,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_project_members_added_by",
+                "columns": [
+                  "added_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_project_members_project",
+                "columns": [
+                  "project_id"
+                ],
+                "referencedTable": "public.projects",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_project_members_user",
+                "columns": [
+                  "user_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_project_role",
+                "expression": "((project_role)::text = ANY ((ARRAY['ProjectOwner'::character varying, 'ProjectDeveloper'::character varying, 'ProjectApprover'::character varying, 'ProjectViewer'::character varying])::text[]))"
+              }
+            ],
+            "indexSize": 40960
+          },
+          {
+            "name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "name",
+                "position": 2,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "description",
+                "position": 3,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "position": 4,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'Active'::character varying"
+              },
+              {
+                "name": "created_at",
+                "position": 5,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "updated_at",
+                "position": 6,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "created_by_id",
+                "position": 7,
+                "type": "uuid",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_projects_created_by",
+                "type": "BTREE",
+                "expressions": [
+                  "created_by_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_projects_name",
+                "type": "BTREE",
+                "expressions": [
+                  "name"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_projects_status",
+                "type": "BTREE",
+                "expressions": [
+                  "status"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "projects_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_projects_created_by",
+                "columns": [
+                  "created_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_project_status",
+                "expression": "((status)::text = ANY ((ARRAY['Active'::character varying, 'Archived'::character varying])::text[]))"
+              }
+            ],
+            "triggers": [
+              {
+                "name": "update_projects_updated_at",
+                "event": "UPDATE",
+                "timing": "BEFORE",
+                "body": "CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()"
+              }
+            ],
+            "indexSize": 40960
+          },
+          {
+            "name": "schema_drift_events",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "database_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "snapshot_id",
+                "position": 3,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "drift_type",
+                "position": 4,
+                "type": "character varying(100)",
+                "nullable": false
+              },
+              {
+                "name": "affected_object",
+                "position": 5,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "drift_details",
+                "position": 6,
+                "type": "jsonb",
+                "nullable": false
+              },
+              {
+                "name": "detected_at",
+                "position": 7,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "acknowledged_by_id",
+                "position": 8,
+                "type": "uuid",
+                "nullable": true
+              },
+              {
+                "name": "acknowledged_at",
+                "position": 9,
+                "type": "timestamp with time zone",
+                "nullable": true
+              },
+              {
+                "name": "resolution_notes",
+                "position": 10,
+                "type": "text",
+                "nullable": true
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_drift_acknowledged",
+                "type": "BTREE",
+                "expressions": [
+                  "acknowledged_at"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_drift_database",
+                "type": "BTREE",
+                "expressions": [
+                  "database_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_drift_detected_at",
+                "type": "BTREE",
+                "expressions": [
+                  "detected_at DESC"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_drift_snapshot",
+                "type": "BTREE",
+                "expressions": [
+                  "snapshot_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "schema_drift_events_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_drift_acknowledged_by",
+                "columns": [
+                  "acknowledged_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "SET NULL",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_drift_database",
+                "columns": [
+                  "database_id"
+                ],
+                "referencedTable": "public.databases",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_drift_snapshot",
+                "columns": [
+                  "snapshot_id"
+                ],
+                "referencedTable": "public.schema_snapshots",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_drift_type",
+                "expression": "((drift_type)::text = ANY ((ARRAY['table_added'::character varying, 'table_removed'::character varying, 'column_added'::character varying, 'column_removed'::character varying, 'column_modified'::character varying, 'index_added'::character varying, 'index_removed'::character varying, 'constraint_changed'::character varying])::text[]))"
+              }
+            ],
+            "indexSize": 49152
+          },
+          {
+            "name": "schema_migrations",
+            "columns": [
+              {
+                "name": "version",
+                "position": 1,
+                "type": "bigint",
+                "nullable": false
+              },
+              {
+                "name": "dirty",
+                "position": 2,
+                "type": "boolean",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "schema_migrations_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "version"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "dataSize": 8192,
+            "indexSize": 16384
+          },
+          {
+            "name": "schema_snapshots",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "database_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "schema_hash",
+                "position": 3,
+                "type": "character varying(64)",
+                "nullable": false
+              },
+              {
+                "name": "schema_definition",
+                "position": 4,
+                "type": "jsonb",
+                "nullable": false
+              },
+              {
+                "name": "captured_at",
+                "position": 5,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_snapshots_captured_at",
+                "type": "BTREE",
+                "expressions": [
+                  "captured_at DESC"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_snapshots_database",
+                "type": "BTREE",
+                "expressions": [
+                  "database_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_snapshots_hash",
+                "type": "BTREE",
+                "expressions": [
+                  "schema_hash"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "schema_snapshots_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_snapshots_database",
+                "columns": [
+                  "database_id"
+                ],
+                "referencedTable": "public.databases",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "indexSize": 40960
+          },
+          {
+            "name": "user_groups",
+            "columns": [
+              {
+                "name": "user_id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "group_id",
+                "position": 2,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "added_at",
+                "position": 3,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "added_by_id",
+                "position": 4,
+                "type": "uuid",
+                "nullable": false
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_user_groups_group",
+                "type": "BTREE",
+                "expressions": [
+                  "group_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_user_groups_user",
+                "type": "BTREE",
+                "expressions": [
+                  "user_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "user_groups_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "user_id",
+                  "group_id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "foreignKeys": [
+              {
+                "name": "fk_user_groups_added_by",
+                "columns": [
+                  "added_by_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "RESTRICT",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_user_groups_group",
+                "columns": [
+                  "group_id"
+                ],
+                "referencedTable": "public.groups",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              },
+              {
+                "name": "fk_user_groups_user",
+                "columns": [
+                  "user_id"
+                ],
+                "referencedTable": "public.users",
+                "referencedColumns": [
+                  "id"
+                ],
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            ],
+            "indexSize": 24576
+          },
+          {
+            "name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "position": 1,
+                "type": "uuid",
+                "nullable": false,
+                "default": "gen_random_uuid()"
+              },
+              {
+                "name": "email",
+                "position": 2,
+                "type": "character varying(255)",
+                "nullable": false
+              },
+              {
+                "name": "password_hash",
+                "position": 3,
+                "type": "character varying(255)",
+                "nullable": true
+              },
+              {
+                "name": "display_name",
+                "position": 4,
+                "type": "character varying(255)",
+                "nullable": true
+              },
+              {
+                "name": "organization_role",
+                "position": 5,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'OrganizationDeveloper'::character varying"
+              },
+              {
+                "name": "status",
+                "position": 6,
+                "type": "character varying(50)",
+                "nullable": false,
+                "default": "'Active'::character varying"
+              },
+              {
+                "name": "oauth_provider",
+                "position": 7,
+                "type": "character varying(50)",
+                "nullable": true
+              },
+              {
+                "name": "oauth_id",
+                "position": 8,
+                "type": "character varying(255)",
+                "nullable": true
+              },
+              {
+                "name": "two_factor_enabled",
+                "position": 9,
+                "type": "boolean",
+                "nullable": true,
+                "default": "false"
+              },
+              {
+                "name": "two_factor_secret",
+                "position": 10,
+                "type": "character varying(255)",
+                "nullable": true
+              },
+              {
+                "name": "last_login_at",
+                "position": 11,
+                "type": "timestamp with time zone",
+                "nullable": true
+              },
+              {
+                "name": "created_at",
+                "position": 12,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              },
+              {
+                "name": "updated_at",
+                "position": 13,
+                "type": "timestamp with time zone",
+                "nullable": false,
+                "default": "CURRENT_TIMESTAMP"
+              }
+            ],
+            "indexes": [
+              {
+                "name": "idx_users_email",
+                "type": "BTREE",
+                "expressions": [
+                  "email"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_users_oauth",
+                "type": "BTREE",
+                "expressions": [
+                  "oauth_provider",
+                  "oauth_id"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_users_organization_role",
+                "type": "BTREE",
+                "expressions": [
+                  "organization_role"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "idx_users_status",
+                "type": "BTREE",
+                "expressions": [
+                  "status"
+                ],
+                "primary": false,
+                "unique": false,
+                "visible": true
+              },
+              {
+                "name": "users_email_key",
+                "type": "BTREE",
+                "expressions": [
+                  "email"
+                ],
+                "primary": false,
+                "unique": true,
+                "visible": true
+              },
+              {
+                "name": "users_pkey",
+                "type": "BTREE",
+                "expressions": [
+                  "id"
+                ],
+                "primary": true,
+                "unique": true,
+                "visible": true
+              }
+            ],
+            "checkConstraints": [
+              {
+                "name": "check_email_format",
+                "expression": "((email)::text ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'::text)"
+              },
+              {
+                "name": "check_organization_role",
+                "expression": "((organization_role)::text = ANY ((ARRAY['OrganizationAdmin'::character varying, 'OrganizationDBA'::character varying, 'OrganizationDeveloper'::character varying])::text[]))"
+              },
+              {
+                "name": "check_status",
+                "expression": "((status)::text = ANY ((ARRAY['Active'::character varying, 'Inactive'::character varying, 'Suspended'::character varying])::text[]))"
+              }
+            ],
+            "triggers": [
+              {
+                "name": "update_users_updated_at",
+                "event": "UPDATE",
+                "timing": "BEFORE",
+                "body": "CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()"
+              }
+            ],
+            "indexSize": 57344
+          }
+        ],
+        "functions": [
+          {
+            "name": "update_updated_at_column",
+            "definition": "CREATE OR REPLACE FUNCTION public.update_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    NEW.updated_at = CURRENT_TIMESTAMP;\n    RETURN NEW;\nEND;\n$function$\n"
+          }
+        ]
+      }
+    ]
+  }
+}
