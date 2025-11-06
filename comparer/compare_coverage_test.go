@@ -392,7 +392,6 @@ func TestCompareMaterializedViews(t *testing.T) {
 
 	opts := &CompareOptions{Engine: engine.PostgreSQL}
 	mdiff, err := CompareSchemasDetailed(oldSchema, newSchema, opts)
-
 	if err != nil {
 		t.Fatalf("CompareSchemasDetailed failed: %v", err)
 	}
@@ -455,7 +454,6 @@ func TestCompareProcedures(t *testing.T) {
 
 	opts := &CompareOptions{Engine: engine.MySQL}
 	mdiff, err := CompareSchemasDetailed(oldSchema, newSchema, opts)
-
 	if err != nil {
 		t.Fatalf("CompareSchemasDetailed failed: %v", err)
 	}
@@ -503,7 +501,6 @@ func TestCompareEnumTypes(t *testing.T) {
 
 	opts := &CompareOptions{Engine: engine.PostgreSQL}
 	mdiff, err := CompareSchemasDetailed(oldSchema, newSchema, opts)
-
 	if err != nil {
 		t.Fatalf("CompareSchemasDetailed failed: %v", err)
 	}
@@ -557,7 +554,6 @@ func TestCompareEvents(t *testing.T) {
 
 	opts := &CompareOptions{Engine: engine.MySQL}
 	mdiff, err := CompareSchemasDetailed(oldSchema, newSchema, opts)
-
 	if err != nil {
 		t.Fatalf("CompareSchemasDetailed failed: %v", err)
 	}
@@ -609,7 +605,6 @@ func TestCompareExtensions(t *testing.T) {
 
 	opts := &CompareOptions{Engine: engine.PostgreSQL}
 	mdiff, err := CompareSchemasDetailed(oldSchema, newSchema, opts)
-
 	if err != nil {
 		t.Fatalf("CompareSchemasDetailed failed: %v", err)
 	}

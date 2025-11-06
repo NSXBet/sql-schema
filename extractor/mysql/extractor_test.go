@@ -44,7 +44,7 @@ func TestMySQLExtractor(t *testing.T) {
 	// Connect to database
 	db, err := sql.Open("mysql", connStr)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Wait for database to be ready
 	err = db.Ping()

@@ -12,11 +12,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/blang/semver/v4"
+	schemaextract "github.com/nsxbet/sql-schema"
+	"github.com/nsxbet/sql-schema/comparer"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
-
-	"github.com/nsxbet/sql-schema"
-	"github.com/nsxbet/sql-schema/comparer"
 )
 
 const (
@@ -43,7 +42,9 @@ var (
 		"__public":   true,
 	}
 
-	viewDefMatcher = regexp.MustCompile("CREATE ALGORITHM=(UNDEFINED|MERGE|TEMPTABLE) DEFINER=`([^`]+)`@`([^`]+)` SQL SECURITY (DEFINER|INVOKER) VIEW `([^`]+)`( \\((`([^`]+)`)+\\))? AS (?P<def>.+)")
+	viewDefMatcher = regexp.MustCompile(
+		"CREATE ALGORITHM=(UNDEFINED|MERGE|TEMPTABLE) DEFINER=`([^`]+)`@`([^`]+)` SQL SECURITY (DEFINER|INVOKER) VIEW `([^`]+)`( \\((`([^`]+)`)+\\))? AS (?P<def>.+)",
+	)
 )
 
 // Extractor extracts MySQL database schema.
@@ -182,7 +183,7 @@ func (e *Extractor) ListDatabases(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var databases []string
 	for rows.Next() {
@@ -238,7 +239,10 @@ type TableKey struct {
 	Table  string
 }
 
-func (e *Extractor) getIndexes(ctx context.Context, atLeast8_0_13, isMariaDB bool) (map[TableKey]map[string]*schemaextract.Index, error) {
+func (e *Extractor) getIndexes(
+	ctx context.Context,
+	atLeast8_0_13, isMariaDB bool,
+) (map[TableKey]map[string]*schemaextract.Index, error) {
 	indexMap := make(map[TableKey]map[string]*schemaextract.Index)
 
 	indexQuery := `
@@ -281,7 +285,7 @@ func (e *Extractor) getIndexes(ctx context.Context, atLeast8_0_13, isMariaDB boo
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, indexQuery)
 	}
-	defer indexRows.Close()
+	defer func() { _ = indexRows.Close() }()
 
 	for indexRows.Next() {
 		var tableName, indexName, indexType, comment, expression string
@@ -387,7 +391,7 @@ func (e *Extractor) getColumns(ctx context.Context, atLeast5_7_0 bool) (map[Tabl
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, columnQuery)
 	}
-	defer columnRows.Close()
+	defer func() { _ = columnRows.Close() }()
 
 	for columnRows.Next() {
 		column := &schemaextract.Column{}
@@ -567,7 +571,10 @@ func unquoteMySQLString(s string) string {
 	return string(result)
 }
 
-func (e *Extractor) getCheckConstraints(ctx context.Context, atLeast8_0_16 bool) (map[TableKey][]*schemaextract.CheckConstraint, error) {
+func (e *Extractor) getCheckConstraints(
+	ctx context.Context,
+	atLeast8_0_16 bool,
+) (map[TableKey][]*schemaextract.CheckConstraint, error) {
 	checkMap := make(map[TableKey][]*schemaextract.CheckConstraint)
 	if !atLeast8_0_16 {
 		return checkMap, nil
@@ -586,7 +593,7 @@ func (e *Extractor) getCheckConstraints(ctx context.Context, atLeast8_0_16 bool)
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, checkQuery)
 	}
-	defer checkRows.Close()
+	defer func() { _ = checkRows.Close() }()
 
 	for checkRows.Next() {
 		check := &schemaextract.CheckConstraint{}
@@ -604,7 +611,10 @@ func (e *Extractor) getCheckConstraints(ctx context.Context, atLeast8_0_16 bool)
 	return checkMap, nil
 }
 
-func (e *Extractor) getViews(ctx context.Context, columnMap map[TableKey][]*schemaextract.Column) (map[TableKey]*schemaextract.View, error) {
+func (e *Extractor) getViews(
+	ctx context.Context,
+	columnMap map[TableKey][]*schemaextract.Column,
+) (map[TableKey]*schemaextract.View, error) {
 	viewMap := make(map[TableKey]*schemaextract.View)
 
 	viewQuery := `
@@ -618,7 +628,7 @@ func (e *Extractor) getViews(ctx context.Context, columnMap map[TableKey][]*sche
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, viewQuery)
 	}
-	defer viewRows.Close()
+	defer func() { _ = viewRows.Close() }()
 
 	for viewRows.Next() {
 		view := &schemaextract.View{}
@@ -652,7 +662,11 @@ func (e *Extractor) reconcileViewDefinition(ctx context.Context, viewName string
 	var createStmt, unused string
 	if err := e.db.QueryRowContext(ctx, query).Scan(&unused, &createStmt, &unused, &unused); err != nil {
 		if err == sql.ErrNoRows {
-			slog.Warn("no rows return for query show create view", slog.String("viewName", viewName), slog.String("databaseName", e.databaseName))
+			slog.Warn(
+				"no rows return for query show create view",
+				slog.String("viewName", viewName),
+				slog.String("databaseName", e.databaseName),
+			)
 			return "", nil
 		}
 		return "", fmt.Errorf("failed to scan row for query: %s: %w", query, err)
@@ -660,7 +674,12 @@ func (e *Extractor) reconcileViewDefinition(ctx context.Context, viewName string
 
 	def, err := getViewDefFromCreateView(createStmt)
 	if err != nil {
-		slog.Warn("failed to get view definition", slog.String("viewName", viewName), slog.String("databaseName", e.databaseName), slog.Any("error", err))
+		slog.Warn(
+			"failed to get view definition",
+			slog.String("viewName", viewName),
+			slog.String("databaseName", e.databaseName),
+			slog.Any("error", err),
+		)
 		return "", nil
 	}
 
@@ -701,7 +720,7 @@ func (e *Extractor) getTriggers(ctx context.Context) (map[TableKey][]*schemaextr
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, triggersQuery)
 	}
-	defer triggerRows.Close()
+	defer func() { _ = triggerRows.Close() }()
 
 	for triggerRows.Next() {
 		var name, table, event, timing, statement, sqlMode, charsetClient, collationConnection string
@@ -743,7 +762,7 @@ func (e *Extractor) getEvents(ctx context.Context) ([]*schemaextract.Event, erro
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, listEventsQuery)
 	}
-	defer eventRows.Close()
+	defer func() { _ = eventRows.Close() }()
 
 	var events []*schemaextract.Event
 	for eventRows.Next() {
@@ -780,7 +799,7 @@ func (e *Extractor) getCreateEventStmt(ctx context.Context, name string) (string
 	if err != nil {
 		return "", comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var createEvent sql.NullString
 	columns, err := rows.Columns()
@@ -857,7 +876,7 @@ func (e *Extractor) getForeignKeys(ctx context.Context) (map[TableKey][]*schemae
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, fkQuery)
 	}
-	defer fkRows.Close()
+	defer func() { _ = fkRows.Close() }()
 
 	fkMap := make(map[IndexKey]*schemaextract.ForeignKey)
 	for fkRows.Next() {
@@ -877,7 +896,7 @@ func (e *Extractor) getForeignKeys(ctx context.Context) (map[TableKey][]*schemae
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, kcuQuery)
 	}
-	defer kcuQueryRows.Close()
+	defer func() { _ = kcuQueryRows.Close() }()
 
 	for kcuQueryRows.Next() {
 		var tableName, fkName, column, referencedColumn string
@@ -922,7 +941,7 @@ func (e *Extractor) getPartitions(ctx context.Context) (map[TableKey][]*schemaex
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	type partitionKey struct {
 		tableName     string
@@ -1034,7 +1053,7 @@ func (e *Extractor) getPartitions(ctx context.Context) (map[TableKey][]*schemaex
 				}
 			}
 		}
-		showRows.Close()
+		_ = showRows.Close()
 	}
 
 	return result, nil
@@ -1082,7 +1101,7 @@ func (e *Extractor) getRoutines(ctx context.Context) ([]*schemaextract.Function,
 	if err != nil {
 		return nil, nil, comparer.FormatErrorWithQuery(err, routinesQuery)
 	}
-	defer routineRows.Close()
+	defer func() { _ = routineRows.Close() }()
 
 	var functions []*schemaextract.Function
 	var procedures []*schemaextract.Procedure
@@ -1138,7 +1157,7 @@ func (e *Extractor) getCreateFunctionStmt(ctx context.Context, functionName stri
 	if err != nil {
 		return "", comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var createFunction sql.NullString
 	columns, err := rows.Columns()
@@ -1202,7 +1221,7 @@ func (e *Extractor) getCreateProcedureStmt(ctx context.Context, procedureName st
 	if err != nil {
 		return "", comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var createProcedure sql.NullString
 	columns, err := rows.Columns()
@@ -1287,7 +1306,7 @@ func (e *Extractor) getTables(
 	if err != nil {
 		return nil, nil, comparer.FormatErrorWithQuery(err, tableQuery)
 	}
-	defer tableRows.Close()
+	defer func() { _ = tableRows.Close() }()
 
 	var tables []*schemaextract.Table
 	var views []*schemaextract.View

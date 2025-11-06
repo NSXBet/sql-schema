@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -86,7 +85,9 @@ func tokenizeExpression(expr string) []string {
 
 	// Regular expression to match MySQL tokens
 	// Matches: strings, numbers, backtick identifiers, identifiers, operators, punctuation
-	tokenRe := regexp.MustCompile("`[^`]*`|'[^']*'|\"[^\"]*\"|[0-9]+\\.?[0-9]*|[a-zA-Z_][a-zA-Z0-9_]*|[<>=!]+|[(),]|[+\\-*/]|\\s+")
+	tokenRe := regexp.MustCompile(
+		"`[^`]*`|'[^']*'|\"[^\"]*\"|[0-9]+\\.?[0-9]*|[a-zA-Z_][a-zA-Z0-9_]*|[<>=!]+|[(),]|[+\\-*/]|\\s+",
+	)
 
 	matches := tokenRe.FindAllString(expr, -1)
 	for _, match := range matches {
@@ -190,18 +191,6 @@ func normalizeOperator(op string) string {
 		return "<>"
 	}
 	return op
-}
-
-// compareASTNodes compares two AST nodes for semantic equivalence.
-// This is used for deep comparison of complex expressions.
-// Note: This is a lightweight implementation. For full AST comparison,
-// consider integrating a proper MySQL parser library.
-func compareASTNodes(node1, node2 any) bool {
-	// For now, use string representation comparison
-	// This could be enhanced with proper AST traversal in the future
-	str1 := fmt.Sprintf("%v", node1)
-	str2 := fmt.Sprintf("%v", node2)
-	return str1 == str2
 }
 
 // normalizeWhitespace normalizes whitespace in expressions.

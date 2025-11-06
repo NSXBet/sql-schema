@@ -5,9 +5,8 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v3"
-
 	schemaextract "github.com/nsxbet/sql-schema"
+	"gopkg.in/yaml.v3"
 )
 
 // ExportJSON exports a database schema to JSON format.
@@ -23,7 +22,7 @@ func ExportJSONFile(schema *schemaextract.DatabaseSchema, filename string) error
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ExportJSON(schema, file)
 }
@@ -38,7 +37,7 @@ func ExportJSONCompact(schema *schemaextract.DatabaseSchema, writer io.Writer) e
 func ExportYAML(schema *schemaextract.DatabaseSchema, writer io.Writer) error {
 	encoder := yaml.NewEncoder(writer)
 	encoder.SetIndent(2)
-	defer encoder.Close()
+	defer func() { _ = encoder.Close() }()
 	return encoder.Encode(schema)
 }
 
@@ -48,7 +47,7 @@ func ExportYAMLFile(schema *schemaextract.DatabaseSchema, filename string) error
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ExportYAML(schema, file)
 }
@@ -69,7 +68,7 @@ func ImportJSONFile(filename string) (*schemaextract.DatabaseSchema, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ImportJSON(file)
 }
@@ -90,7 +89,7 @@ func ImportYAMLFile(filename string) (*schemaextract.DatabaseSchema, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ImportYAML(file)
 }
@@ -199,7 +198,7 @@ func ExportSnapshotFile(snapshot *schemaextract.Snapshot, filename string) error
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ExportSnapshot(snapshot, file)
 }
@@ -208,7 +207,7 @@ func ExportSnapshotFile(snapshot *schemaextract.Snapshot, filename string) error
 func ExportSnapshotYAML(snapshot *schemaextract.Snapshot, writer io.Writer) error {
 	encoder := yaml.NewEncoder(writer)
 	encoder.SetIndent(2)
-	defer encoder.Close()
+	defer func() { _ = encoder.Close() }()
 	return encoder.Encode(snapshot)
 }
 
@@ -218,7 +217,7 @@ func ExportSnapshotYAMLFile(snapshot *schemaextract.Snapshot, filename string) e
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ExportSnapshotYAML(snapshot, file)
 }
@@ -239,7 +238,7 @@ func ImportSnapshotFile(filename string) (*schemaextract.Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ImportSnapshot(file)
 }
@@ -260,7 +259,7 @@ func ImportSnapshotYAMLFile(filename string) (*schemaextract.Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ImportSnapshotYAML(file)
 }

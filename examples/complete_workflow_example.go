@@ -9,8 +9,6 @@ import (
 	"github.com/nsxbet/sql-schema/comparer/engine"
 	"github.com/nsxbet/sql-schema/formatter"
 	"github.com/nsxbet/sql-schema/planner"
-	// Note: Engine comparers are automatically registered when importing util package.
-	// No need to manually import engine packages anymore!
 )
 
 func main() {

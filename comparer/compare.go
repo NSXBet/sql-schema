@@ -3,11 +3,10 @@ package comparer
 import (
 	"slices"
 
-	"github.com/pkg/errors"
-
 	schemaextract "github.com/nsxbet/sql-schema"
 	"github.com/nsxbet/sql-schema/comparer/engine"
 	"github.com/nsxbet/sql-schema/diff"
+	"github.com/pkg/errors"
 )
 
 // CompareOptions configures schema comparison behavior.
@@ -37,7 +36,10 @@ func DefaultCompareOptions(eng engine.Engine) *CompareOptions {
 
 // CompareSchemasDetailed compares two database schemas and returns detailed differences.
 // This is the main entry point for engine-aware schema comparison.
-func CompareSchemasDetailed(oldSchema, newSchema *schemaextract.DatabaseSchema, opts *CompareOptions) (*diff.MetadataDiff, error) {
+func CompareSchemasDetailed(
+	oldSchema, newSchema *schemaextract.DatabaseSchema,
+	opts *CompareOptions,
+) (*diff.MetadataDiff, error) {
 	if opts == nil {
 		opts = DefaultCompareOptions(engine.PostgreSQL)
 	}
@@ -78,7 +80,13 @@ func CompareSchemasDetailed(oldSchema, newSchema *schemaextract.DatabaseSchema, 
 		result.ViewChanges = append(result.ViewChanges, viewChanges...)
 
 		// Compare materialized views
-		mvChanges, err := compareMaterializedViews(oldSch.MaterializedViews, newSch.MaterializedViews, oldSch.Name, comparer, opts)
+		mvChanges, err := compareMaterializedViews(
+			oldSch.MaterializedViews,
+			newSch.MaterializedViews,
+			oldSch.Name,
+			comparer,
+			opts,
+		)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to compare materialized views")
 		}
@@ -173,7 +181,12 @@ func compareSchemasLevel(oldDB, newDB *schemaextract.DatabaseSchema) []*diff.Sch
 }
 
 // compareTables compares tables between old and new schemas.
-func compareTablesDetailed(oldTables, newTables []*schemaextract.Table, schemaName string, comparer engine.Comparer, opts *CompareOptions) ([]*diff.TableDiff, error) {
+func compareTablesDetailed(
+	oldTables, newTables []*schemaextract.Table,
+	schemaName string,
+	comparer engine.Comparer,
+	opts *CompareOptions,
+) ([]*diff.TableDiff, error) {
 	var diffs []*diff.TableDiff
 
 	// Build maps for efficient lookup
@@ -226,7 +239,12 @@ func compareTablesDetailed(oldTables, newTables []*schemaextract.Table, schemaNa
 }
 
 // compareTableDetails compares two tables in detail.
-func compareTableDetails(oldTable, newTable *schemaextract.Table, schemaName string, comparer engine.Comparer, opts *CompareOptions) (*diff.TableDiff, error) {
+func compareTableDetails(
+	oldTable, newTable *schemaextract.Table,
+	schemaName string,
+	comparer engine.Comparer,
+	opts *CompareOptions,
+) (*diff.TableDiff, error) {
 	diff := &diff.TableDiff{
 		Action:     diff.MetadataDiffActionAlter,
 		SchemaName: schemaName,
@@ -666,7 +684,12 @@ func compareRules(oldRules, newRules []*schemaextract.Rule) []*diff.RuleDiff {
 }
 
 // compareViews compares views between old and new schemas.
-func compareViewsDetailed(oldViews, newViews []*schemaextract.View, schemaName string, comparer engine.Comparer, opts *CompareOptions) ([]*diff.ViewDiff, error) {
+func compareViewsDetailed(
+	oldViews, newViews []*schemaextract.View,
+	schemaName string,
+	comparer engine.Comparer,
+	opts *CompareOptions,
+) ([]*diff.ViewDiff, error) {
 	var diffs []*diff.ViewDiff
 
 	// Build maps
@@ -725,7 +748,12 @@ func compareViewsDetailed(oldViews, newViews []*schemaextract.View, schemaName s
 	return diffs, nil
 }
 
-func compareMaterializedViews(oldMVs, newMVs []*schemaextract.MaterializedView, schemaName string, comparer engine.Comparer, opts *CompareOptions) ([]*diff.MaterializedViewDiff, error) {
+func compareMaterializedViews(
+	oldMVs, newMVs []*schemaextract.MaterializedView,
+	schemaName string,
+	comparer engine.Comparer,
+	opts *CompareOptions,
+) ([]*diff.MaterializedViewDiff, error) {
 	var diffs []*diff.MaterializedViewDiff
 
 	// Build maps
@@ -784,7 +812,12 @@ func compareMaterializedViews(oldMVs, newMVs []*schemaextract.MaterializedView, 
 	return diffs, nil
 }
 
-func compareFunctionsDetailed(oldFuncs, newFuncs []*schemaextract.Function, schemaName string, comparer engine.Comparer, opts *CompareOptions) ([]*diff.FunctionDiff, error) {
+func compareFunctionsDetailed(
+	oldFuncs, newFuncs []*schemaextract.Function,
+	schemaName string,
+	comparer engine.Comparer,
+	opts *CompareOptions,
+) ([]*diff.FunctionDiff, error) {
 	var diffs []*diff.FunctionDiff
 
 	// Group functions by signature to handle overloading
@@ -838,7 +871,10 @@ func compareFunctionsDetailed(oldFuncs, newFuncs []*schemaextract.Function, sche
 }
 
 // groupFunctionsBySignature groups functions by their signature (name + parameters).
-func groupFunctionsBySignature(functions []*schemaextract.Function, comparer engine.FunctionComparer) map[string]*schemaextract.Function {
+func groupFunctionsBySignature(
+	functions []*schemaextract.Function,
+	comparer engine.FunctionComparer,
+) map[string]*schemaextract.Function {
 	result := make(map[string]*schemaextract.Function)
 	for _, fn := range functions {
 		sig := comparer.GetSignature(fn)
@@ -847,7 +883,12 @@ func groupFunctionsBySignature(functions []*schemaextract.Function, comparer eng
 	return result
 }
 
-func compareProcedures(oldProcs, newProcs []*schemaextract.Procedure, schemaName string, comparer engine.Comparer, opts *CompareOptions) []*diff.ProcedureDiff {
+func compareProcedures(
+	oldProcs, newProcs []*schemaextract.Procedure,
+	schemaName string,
+	comparer engine.Comparer,
+	opts *CompareOptions,
+) []*diff.ProcedureDiff {
 	var diffs []*diff.ProcedureDiff
 
 	// Build maps
@@ -908,7 +949,12 @@ func compareProcedures(oldProcs, newProcs []*schemaextract.Procedure, schemaName
 	return diffs
 }
 
-func compareSequences(oldSeqs, newSeqs []*schemaextract.Sequence, schemaName string, comparer engine.Comparer, opts *CompareOptions) []*diff.SequenceDiff {
+func compareSequences(
+	oldSeqs, newSeqs []*schemaextract.Sequence,
+	schemaName string,
+	comparer engine.Comparer,
+	opts *CompareOptions,
+) []*diff.SequenceDiff {
 	var diffs []*diff.SequenceDiff
 
 	// Build maps
@@ -962,7 +1008,11 @@ func compareSequences(oldSeqs, newSeqs []*schemaextract.Sequence, schemaName str
 	return diffs
 }
 
-func compareEnumTypes(oldEnums, newEnums []*schemaextract.EnumType, schemaName string, opts *CompareOptions) []*diff.EnumTypeDiff {
+func compareEnumTypes(
+	oldEnums, newEnums []*schemaextract.EnumType,
+	schemaName string,
+	opts *CompareOptions,
+) []*diff.EnumTypeDiff {
 	var diffs []*diff.EnumTypeDiff
 
 	// Build maps
@@ -1113,7 +1163,11 @@ func compareEvents(oldEvents, newEvents []*schemaextract.Event, opts *CompareOpt
 	return diffs
 }
 
-func compareExtensions(oldExts, newExts []*schemaextract.Extension, schemaName string, opts *CompareOptions) []*diff.ExtensionDiff {
+func compareExtensions(
+	oldExts, newExts []*schemaextract.Extension,
+	schemaName string,
+	opts *CompareOptions,
+) []*diff.ExtensionDiff {
 	var diffs []*diff.ExtensionDiff
 
 	// Build maps

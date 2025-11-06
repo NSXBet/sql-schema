@@ -10,8 +10,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/lib/pq"
-
-	"github.com/nsxbet/sql-schema"
+	schemaextract "github.com/nsxbet/sql-schema"
 	"github.com/nsxbet/sql-schema/comparer"
 )
 
@@ -50,7 +49,7 @@ func (e *Extractor) ExtractSchema(ctx context.Context) (*schemaextract.DatabaseS
 	if err != nil {
 		return nil, err
 	}
-	defer txn.Rollback()
+	defer func() { _ = txn.Rollback() }()
 
 	// Set search path to empty for consistent schema references
 	if err := e.setTxSearchPath(txn, ""); err != nil {
@@ -206,7 +205,7 @@ func (e *Extractor) ListDatabases(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var databases []string
 	for rows.Next() {
@@ -310,7 +309,7 @@ func (e *Extractor) getSchemas(txn *sql.Tx) (map[string]*schemaInfo, error) {
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	schemaMap := make(map[string]*schemaInfo)
 	for rows.Next() {
@@ -330,11 +329,6 @@ func (e *Extractor) getSchemas(txn *sql.Tx) (map[string]*schemaInfo, error) {
 	}
 
 	return schemaMap, nil
-}
-
-type columnOidKey struct {
-	tableOid int
-	position int
 }
 
 func (e *Extractor) getTableColumns(txn *sql.Tx) (map[TableKey][]*schemaextract.Column, error) {
@@ -365,7 +359,7 @@ func (e *Extractor) getTableColumns(txn *sql.Tx) (map[TableKey][]*schemaextract.
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	columnMap := make(map[TableKey][]*schemaextract.Column)
 
@@ -433,7 +427,7 @@ func (e *Extractor) getIndexes(txn *sql.Tx) (map[TableKey][]*schemaextract.Index
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	indexMap := make(map[TableKey][]*schemaextract.Index)
 	indexDefRe := regexp.MustCompile(`USING\s+(\w+)\s+\(([^)]+)\)`)
@@ -546,7 +540,7 @@ func (e *Extractor) getTriggers(txn *sql.Tx) (map[TableKey][]*schemaextract.Trig
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	triggerMap := make(map[TableKey][]*schemaextract.Trigger)
 
@@ -594,7 +588,7 @@ func (e *Extractor) getChecks(txn *sql.Tx) (map[TableKey][]*schemaextract.CheckC
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	checkMap := make(map[TableKey][]*schemaextract.CheckConstraint)
 
@@ -645,7 +639,7 @@ func (e *Extractor) getForeignKeys(txn *sql.Tx) (map[TableKey][]*schemaextract.F
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	foreignKeyMap := make(map[TableKey][]*schemaextract.ForeignKey)
 	fkDefRe := regexp.MustCompile(`FOREIGN KEY \(([^)]+)\) REFERENCES\s+(?:(\w+)\.)?(\w+)\s*\(([^)]+)\)`)
@@ -750,7 +744,7 @@ func (e *Extractor) getTablePartitions(txn *sql.Tx) (map[TableKey][]*schemaextra
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	partitionMap := make(map[TableKey][]*schemaextract.Partition)
 
@@ -804,7 +798,7 @@ func (e *Extractor) getTables(
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	tableMap := make(map[string][]*schemaextract.Table)
 
@@ -841,7 +835,10 @@ func (e *Extractor) getTables(
 	return tableMap, nil
 }
 
-func (e *Extractor) getViews(txn *sql.Tx, columnMap map[TableKey][]*schemaextract.Column) (map[string][]*schemaextract.View, error) {
+func (e *Extractor) getViews(
+	txn *sql.Tx,
+	columnMap map[TableKey][]*schemaextract.Column,
+) (map[string][]*schemaextract.View, error) {
 	query := `
 		SELECT
 			n.nspname,
@@ -858,7 +855,7 @@ func (e *Extractor) getViews(txn *sql.Tx, columnMap map[TableKey][]*schemaextrac
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	viewMap := make(map[string][]*schemaextract.View)
 
@@ -888,7 +885,10 @@ func (e *Extractor) getViews(txn *sql.Tx, columnMap map[TableKey][]*schemaextrac
 	return viewMap, nil
 }
 
-func (e *Extractor) getMaterializedViews(txn *sql.Tx, columnMap map[TableKey][]*schemaextract.Column) (map[string][]*schemaextract.MaterializedView, error) {
+func (e *Extractor) getMaterializedViews(
+	txn *sql.Tx,
+	columnMap map[TableKey][]*schemaextract.Column,
+) (map[string][]*schemaextract.MaterializedView, error) {
 	query := `
 		SELECT
 			n.nspname,
@@ -905,7 +905,7 @@ func (e *Extractor) getMaterializedViews(txn *sql.Tx, columnMap map[TableKey][]*
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	mvMap := make(map[string][]*schemaextract.MaterializedView)
 
@@ -966,7 +966,7 @@ func (e *Extractor) getExtensionDepend(txn *sql.Tx) (map[extensionDependency]boo
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	extDepend := make(map[extensionDependency]bool)
 
@@ -990,7 +990,10 @@ func (e *Extractor) getExtensionDepend(txn *sql.Tx) (map[extensionDependency]boo
 	return extDepend, nil
 }
 
-func (e *Extractor) getFunctions(txn *sql.Tx, extensionDepend map[extensionDependency]bool) (map[string][]*schemaextract.Function, error) {
+func (e *Extractor) getFunctions(
+	txn *sql.Tx,
+	extensionDepend map[extensionDependency]bool,
+) (map[string][]*schemaextract.Function, error) {
 	query := `
 		SELECT
 			n.nspname,
@@ -1007,7 +1010,7 @@ func (e *Extractor) getFunctions(txn *sql.Tx, extensionDepend map[extensionDepen
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	functionMap := make(map[string][]*schemaextract.Function)
 
@@ -1049,7 +1052,10 @@ func (e *Extractor) getFunctions(txn *sql.Tx, extensionDepend map[extensionDepen
 	return functionMap, nil
 }
 
-func (e *Extractor) getProcedures(txn *sql.Tx, extensionDepend map[extensionDependency]bool) (map[string][]*schemaextract.Procedure, error) {
+func (e *Extractor) getProcedures(
+	txn *sql.Tx,
+	extensionDepend map[extensionDependency]bool,
+) (map[string][]*schemaextract.Procedure, error) {
 	query := `
 		SELECT
 			n.nspname,
@@ -1066,7 +1072,7 @@ func (e *Extractor) getProcedures(txn *sql.Tx, extensionDepend map[extensionDepe
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	procedureMap := make(map[string][]*schemaextract.Procedure)
 
@@ -1126,7 +1132,7 @@ func (e *Extractor) getSequences(txn *sql.Tx) (map[string][]*schemaextract.Seque
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	sequenceMap := make(map[string][]*schemaextract.Sequence)
 
@@ -1177,7 +1183,7 @@ func (e *Extractor) getExtensions(txn *sql.Tx) (map[string][]*schemaextract.Exte
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	extensionMap := make(map[string][]*schemaextract.Extension)
 
@@ -1223,7 +1229,7 @@ func (e *Extractor) getEnumTypes(txn *sql.Tx) (map[string][]*schemaextract.EnumT
 	if err != nil {
 		return nil, comparer.FormatErrorWithQuery(err, query)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	enumMap := make(map[string][]*schemaextract.EnumType)
 

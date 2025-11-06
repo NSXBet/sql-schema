@@ -1,9 +1,6 @@
 package comparer
 
 import (
-	// Auto-import engine implementations to register comparers.
-	// This allows users to use the comparison APIs without manually
-	// importing engine packages.
 	_ "github.com/nsxbet/sql-schema/comparer/engine/mysql"
 	_ "github.com/nsxbet/sql-schema/comparer/engine/postgres"
 )

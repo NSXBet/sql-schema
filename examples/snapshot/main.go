@@ -48,7 +48,7 @@ func postgresSnapshot() {
 		log.Printf("Failed to connect to PostgreSQL: %v", err)
 		return
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Take snapshot with options
 	snap, err := snapshot.TakeSnapshot(db, "mydb", engine.PostgreSQL, &snapshot.SnapshotOptions{
@@ -96,7 +96,7 @@ func mysqlSnapshot() {
 		log.Printf("Failed to connect to MySQL: %v", err)
 		return
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Take snapshot with minimal options
 	snap, err := snapshot.TakeSnapshot(db, "mydb", engine.MySQL, &snapshot.SnapshotOptions{
@@ -178,8 +178,12 @@ func compareSnapshots() {
 	fmt.Printf("\nMigration Strategy:\n%s\n", strategyReport)
 
 	// Save reports to files
-	os.WriteFile("reports/comparison.txt", []byte(report), 0644)
-	os.WriteFile("reports/strategy.txt", []byte(strategyReport), 0644)
+	if err := os.WriteFile("reports/comparison.txt", []byte(report), 0o644); err != nil {
+		log.Printf("Failed to write comparison report: %v", err)
+	}
+	if err := os.WriteFile("reports/strategy.txt", []byte(strategyReport), 0o644); err != nil {
+		log.Printf("Failed to write strategy report: %v", err)
+	}
 
 	fmt.Printf("✓ Reports saved to reports/ directory\n")
 }

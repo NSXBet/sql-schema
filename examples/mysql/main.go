@@ -9,7 +9,6 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-
 	"github.com/nsxbet/sql-schema/extractor/mysql"
 )
 
@@ -153,7 +152,7 @@ func main() {
 	}
 
 	jsonFile := "mysql_schema.json"
-	if err := os.WriteFile(jsonFile, jsonData, 0644); err != nil {
+	if err := os.WriteFile(jsonFile, jsonData, 0o644); err != nil {
 		log.Fatalf("Failed to write JSON file: %v", err)
 	}
 	fmt.Printf("✓ Schema exported to %s (%d bytes)\n", jsonFile, len(jsonData))

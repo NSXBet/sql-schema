@@ -36,7 +36,7 @@ func ExportSQLFile(schema *schemaextract.DatabaseSchema, dialect SQLDialect, fil
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	return ExportSQL(schema, dialect, file)
 }
@@ -234,10 +234,11 @@ func GenerateColumnDDL(col *schemaextract.Column, dialect SQLDialect) string {
 
 	// Generated column
 	if col.Generation != nil {
-		if dialect == DialectMySQL {
+		switch dialect {
+		case DialectMySQL:
 			sb.WriteString(fmt.Sprintf(" GENERATED ALWAYS AS (%s) %s",
 				col.Generation.Expression, col.Generation.Type))
-		} else if dialect == DialectPostgreSQL {
+		case DialectPostgreSQL:
 			sb.WriteString(fmt.Sprintf(" GENERATED ALWAYS AS (%s) STORED",
 				col.Generation.Expression))
 		}

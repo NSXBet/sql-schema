@@ -237,18 +237,6 @@ func normalizeOperator(op string) string {
 	return op
 }
 
-// compareASTNodes compares two AST nodes for semantic equivalence.
-// This is used for deep comparison of complex expressions.
-// Note: This is a lightweight implementation. For full AST comparison,
-// consider integrating a proper SQL parser library.
-func compareASTNodes(node1, node2 any) bool {
-	// For now, use string representation comparison
-	// This could be enhanced with proper AST traversal in the future
-	str1 := fmt.Sprintf("%v", node1)
-	str2 := fmt.Sprintf("%v", node2)
-	return str1 == str2
-}
-
 // normalizeWhitespace normalizes whitespace in expressions.
 func normalizeWhitespace(expr string) string {
 	// Replace multiple spaces with single space

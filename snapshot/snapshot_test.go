@@ -265,7 +265,7 @@ func TestListSnapshots(t *testing.T) {
 	}
 
 	// Create a non-snapshot file (should be ignored)
-	err := os.WriteFile(filepath.Join(tempDir, "readme.txt"), []byte("test"), 0644)
+	err := os.WriteFile(filepath.Join(tempDir, "readme.txt"), []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -511,10 +511,9 @@ func TestEngineDetection(t *testing.T) {
 
 		// The CompareSnapshots function should detect engine automatically
 		_, err := CompareSnapshots(oldSnapshot, newSnapshot, nil)
-		if err != nil {
-			// This is expected to fail in this test since schemas are minimal
-			// We're just testing that the engine detection logic runs
-		}
+		// This is expected to fail in this test since schemas are minimal
+		// We're just testing that the engine detection logic runs
+		_ = err
 	}
 }
 

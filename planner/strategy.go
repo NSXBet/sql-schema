@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/pkg/errors"
-
 	"github.com/nsxbet/sql-schema/comparer/engine"
 	"github.com/nsxbet/sql-schema/diff"
+	"github.com/pkg/errors"
 )
 
 // RiskLevel represents the risk level of a migration operation.
@@ -202,7 +201,10 @@ func convertEnumTypeChanges(strategy *MigrationStrategy, mdiff *diff.MetadataDif
 				op.Risk = RiskLevelHigh
 				op.Reversible = false
 				op.RiskReason = "Removing enum values may fail if values are in use"
-				op.Warnings = append(op.Warnings, fmt.Sprintf("Cannot remove enum values that are in use: %v", enumDiff.RemovedValues))
+				op.Warnings = append(
+					op.Warnings,
+					fmt.Sprintf("Cannot remove enum values that are in use: %v", enumDiff.RemovedValues),
+				)
 			} else if len(enumDiff.AddedValues) > 0 {
 				op.Risk = RiskLevelLow
 				op.Reversible = true
@@ -332,7 +334,10 @@ func convertTableSubChanges(strategy *MigrationStrategy, tableDiff *diff.TableDi
 					op.Warnings = append(op.Warnings, "Changing to NOT NULL may fail if NULL values exist")
 				}
 				if colDiff.OldColumn.Type != colDiff.NewColumn.Type {
-					op.Warnings = append(op.Warnings, "Type change may require explicit USING clause or fail for incompatible data")
+					op.Warnings = append(
+						op.Warnings,
+						"Type change may require explicit USING clause or fail for incompatible data",
+					)
 				}
 			}
 		}

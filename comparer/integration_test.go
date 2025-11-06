@@ -258,7 +258,10 @@ func TestComplexSchemaComparison(t *testing.T) {
 					{Name: "user_view", Definition: "SELECT * FROM users"},
 				},
 				Functions: []*schemaextract.Function{
-					{Name: "get_user", Definition: "CREATE FUNCTION get_user(id INT) RETURNS TEXT AS $$ BEGIN RETURN 'user'; END; $$ LANGUAGE plpgsql;"},
+					{
+						Name:       "get_user",
+						Definition: "CREATE FUNCTION get_user(id INT) RETURNS TEXT AS $$ BEGIN RETURN 'user'; END; $$ LANGUAGE plpgsql;",
+					},
 				},
 				Sequences: []*schemaextract.Sequence{
 					{Name: "user_id_seq", Start: 1, Increment: 1},
@@ -295,8 +298,14 @@ func TestComplexSchemaComparison(t *testing.T) {
 					{Name: "user_view", Definition: "SELECT id, name FROM users"}, // Changed definition
 				},
 				Functions: []*schemaextract.Function{
-					{Name: "get_user", Definition: "CREATE FUNCTION get_user(id INT) RETURNS TEXT AS $$ BEGIN RETURN 'user'; END; $$ LANGUAGE plpgsql;"},
-					{Name: "get_post", Definition: "CREATE FUNCTION get_post(id INT) RETURNS TEXT AS $$ BEGIN RETURN 'post'; END; $$ LANGUAGE plpgsql;"}, // New function
+					{
+						Name:       "get_user",
+						Definition: "CREATE FUNCTION get_user(id INT) RETURNS TEXT AS $$ BEGIN RETURN 'user'; END; $$ LANGUAGE plpgsql;",
+					},
+					{
+						Name:       "get_post",
+						Definition: "CREATE FUNCTION get_post(id INT) RETURNS TEXT AS $$ BEGIN RETURN 'post'; END; $$ LANGUAGE plpgsql;",
+					}, // New function
 				},
 				Sequences: []*schemaextract.Sequence{
 					{Name: "user_id_seq", Start: 1, Increment: 1},

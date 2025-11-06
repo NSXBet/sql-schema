@@ -125,10 +125,7 @@ func (c *BaseIndexComparer) indexesEqual(idx1, idx2 *schemaextract.Index) bool {
 			return false
 		}
 	}
-	if idx1.WhereClause != idx2.WhereClause {
-		return false
-	}
-	return true
+	return idx1.WhereClause == idx2.WhereClause
 }
 
 // CompareIndexWhereConditions compares WHERE clauses.
@@ -203,7 +200,9 @@ func (c *BaseViewComparer) CompareView(oldView, newView *schemaextract.View) (*d
 }
 
 // CompareMaterializedView compares two materialized views.
-func (c *BaseViewComparer) CompareMaterializedView(oldMV, newMV *schemaextract.MaterializedView) (*diff.MaterializedViewComparisonResult, error) {
+func (c *BaseViewComparer) CompareMaterializedView(
+	oldMV, newMV *schemaextract.MaterializedView,
+) (*diff.MaterializedViewComparisonResult, error) {
 	result := &diff.MaterializedViewComparisonResult{}
 
 	if oldMV.Definition != newMV.Definition {
