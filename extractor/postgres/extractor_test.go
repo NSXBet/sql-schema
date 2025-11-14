@@ -195,6 +195,27 @@ func TestPostgreSQLExtractor(t *testing.T) {
 		assert.Equal(t, "User accounts", usersTable.Comment)
 	})
 
+	// Test row count statistics
+	t.Run("RowCountStatistics", func(t *testing.T) {
+		schema, err := extractor.ExtractSchema(ctx)
+		require.NoError(t, err)
+
+		tableCounts := make(map[string]int64)
+		for _, s := range schema.Schemas {
+			if s.Name == "public" {
+				for _, table := range s.Tables {
+					tableCounts[table.Name] = table.RowCount
+				}
+			}
+		}
+
+		// Verify row counts for tables with known data
+		// We inserted 3 users, 3 posts, 2 comments
+		assert.Greater(t, tableCounts["users"], int64(0), "users table should have row count > 0")
+		assert.Greater(t, tableCounts["posts"], int64(0), "posts table should have row count > 0")
+		assert.Greater(t, tableCounts["comments"], int64(0), "comments table should have row count > 0")
+	})
+
 	// Test foreign keys
 	t.Run("ForeignKeys", func(t *testing.T) {
 		schema, err := extractor.ExtractSchema(ctx)
@@ -605,6 +626,12 @@ func setupTestSchema(t *testing.T, db *sql.DB) {
 		`INSERT INTO app.settings (key, value) VALUES
 			('theme', 'dark'),
 			('language', 'en')`,
+
+		// Run ANALYZE to update table statistics (including reltuples for row counts)
+		`ANALYZE users`,
+		`ANALYZE posts`,
+		`ANALYZE comments`,
+		`ANALYZE app.settings`,
 	}
 
 	for _, query := range queries {

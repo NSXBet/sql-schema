@@ -787,7 +787,8 @@ func (e *Extractor) getTables(
 			c.relname,
 			pg_catalog.obj_description(c.oid, 'pg_class'),
 			pg_catalog.pg_total_relation_size(c.oid),
-			pg_catalog.pg_relation_size(c.oid)
+			pg_catalog.pg_relation_size(c.oid),
+			c.reltuples::bigint
 		FROM pg_catalog.pg_class c
 			JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 		WHERE c.relkind IN ('r', 'p')
@@ -805,9 +806,9 @@ func (e *Extractor) getTables(
 	for rows.Next() {
 		var schemaName, tableName string
 		var comment sql.NullString
-		var totalSize, dataSize int64
+		var totalSize, dataSize, rowCount int64
 
-		if err := rows.Scan(&schemaName, &tableName, &comment, &totalSize, &dataSize); err != nil {
+		if err := rows.Scan(&schemaName, &tableName, &comment, &totalSize, &dataSize, &rowCount); err != nil {
 			return nil, err
 		}
 
@@ -822,6 +823,7 @@ func (e *Extractor) getTables(
 			Triggers:         triggerMap[key],
 			Partitions:       partitionMap[key],
 			Comment:          comment.String,
+			RowCount:         rowCount,
 			DataSize:         dataSize,
 			IndexSize:        totalSize - dataSize,
 		}
