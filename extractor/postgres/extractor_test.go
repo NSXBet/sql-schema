@@ -216,6 +216,58 @@ func TestPostgreSQLExtractor(t *testing.T) {
 		assert.Greater(t, tableCounts["comments"], int64(0), "comments table should have row count > 0")
 	})
 
+	// Test RunAnalyze option
+	t.Run("RunAnalyzeOption", func(t *testing.T) {
+		// Create extractor with RunAnalyze enabled
+		extractorWithAnalyze := NewExtractorWithOptions(db, "testdb", &ExtractorOptions{
+			RunAnalyze: true,
+		})
+
+		// Extract schema with ANALYZE enabled
+		schema, err := extractorWithAnalyze.ExtractSchema(ctx)
+		require.NoError(t, err)
+
+		// Verify row counts are populated (should be > 0 for tables with data)
+		var foundNonZeroCount bool
+		for _, s := range schema.Schemas {
+			if s.Name == "public" {
+				for _, table := range s.Tables {
+					if table.RowCount > 0 {
+						foundNonZeroCount = true
+						break
+					}
+				}
+			}
+		}
+
+		assert.True(t, foundNonZeroCount, "should have at least one table with row count > 0 after ANALYZE")
+	})
+
+	// Test WithRunAnalyze method chaining
+	t.Run("WithRunAnalyzeMethod", func(t *testing.T) {
+		// Create extractor and enable ANALYZE with method chaining
+		extractor := NewExtractor(db, "testdb").WithRunAnalyze()
+
+		// Extract schema
+		schema, err := extractor.ExtractSchema(ctx)
+		require.NoError(t, err)
+
+		// Verify row counts are populated
+		var foundNonZeroCount bool
+		for _, s := range schema.Schemas {
+			if s.Name == "public" {
+				for _, table := range s.Tables {
+					if table.RowCount > 0 {
+						foundNonZeroCount = true
+						break
+					}
+				}
+			}
+		}
+
+		assert.True(t, foundNonZeroCount, "should have at least one table with row count > 0 after ANALYZE")
+	})
+
 	// Test foreign keys
 	t.Run("ForeignKeys", func(t *testing.T) {
 		schema, err := extractor.ExtractSchema(ctx)

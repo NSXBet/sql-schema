@@ -14,18 +14,53 @@ import (
 	"github.com/nsxbet/sql-schema/comparer"
 )
 
+// ExtractorOptions configures PostgreSQL schema extraction behavior.
+type ExtractorOptions struct {
+	// RunAnalyze runs ANALYZE on all tables before extraction to ensure
+	// row count statistics (reltuples) are current. This may be expensive
+	// on large databases. Default: false.
+	RunAnalyze bool
+}
+
+// DefaultExtractorOptions returns default extraction options.
+func DefaultExtractorOptions() *ExtractorOptions {
+	return &ExtractorOptions{
+		RunAnalyze: false,
+	}
+}
+
 // Extractor extracts PostgreSQL database schema.
 type Extractor struct {
 	db           *sql.DB
 	databaseName string
+	opts         *ExtractorOptions
 }
 
-// NewExtractor creates a new PostgreSQL schema extractor.
+// NewExtractor creates a new PostgreSQL schema extractor with default options.
+// Deprecated: Use NewExtractorWithOptions for more control over extraction behavior.
 func NewExtractor(db *sql.DB, databaseName string) *Extractor {
+	return NewExtractorWithOptions(db, databaseName, nil)
+}
+
+// NewExtractorWithOptions creates a new PostgreSQL schema extractor with custom options.
+// If opts is nil, default options will be used.
+func NewExtractorWithOptions(db *sql.DB, databaseName string, opts *ExtractorOptions) *Extractor {
+	if opts == nil {
+		opts = DefaultExtractorOptions()
+	}
 	return &Extractor{
 		db:           db,
 		databaseName: databaseName,
+		opts:         opts,
 	}
+}
+
+// WithRunAnalyze enables running ANALYZE on all tables before extraction.
+// This ensures row count statistics (reltuples) are current.
+// Returns the extractor instance for method chaining.
+func (e *Extractor) WithRunAnalyze() *Extractor {
+	e.opts.RunAnalyze = true
+	return e
 }
 
 // ExtractSchema extracts the complete schema metadata for the database.
@@ -42,6 +77,14 @@ func (e *Extractor) ExtractSchema(ctx context.Context) (*schemaextract.DatabaseS
 	searchPath, err := e.getSearchPath(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get search path for database %q: %w", e.databaseName, err)
+	}
+
+	// Run ANALYZE if requested to ensure statistics are current
+	if e.opts.RunAnalyze {
+		if err := e.analyzeAllTables(ctx); err != nil {
+			slog.Warn("failed to run ANALYZE on tables", slog.Any("error", err))
+			// Continue extraction even if ANALYZE fails
+		}
 	}
 
 	// Begin transaction for consistent snapshot
@@ -770,6 +813,53 @@ func (e *Extractor) getTablePartitions(txn *sql.Tx) (map[TableKey][]*schemaextra
 	}
 
 	return partitionMap, nil
+}
+
+// analyzeAllTables runs ANALYZE on all user tables to update statistics.
+// This ensures row count estimates (reltuples) are current.
+// Failures are logged as warnings but don't stop extraction.
+func (e *Extractor) analyzeAllTables(ctx context.Context) error {
+	query := `
+		SELECT n.nspname, c.relname
+		FROM pg_catalog.pg_class c
+			JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+		WHERE c.relkind IN ('r', 'p')
+			AND n.nspname NOT IN (` + SystemSchemaWhereClause + `)
+		ORDER BY n.nspname, c.relname`
+
+	rows, err := e.db.QueryContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to list tables for ANALYZE: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var tables []struct{ schema, table string }
+	for rows.Next() {
+		var schema, table string
+		if err := rows.Scan(&schema, &table); err != nil {
+			return fmt.Errorf("failed to scan table name: %w", err)
+		}
+		tables = append(tables, struct{ schema, table string }{schema, table})
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating tables: %w", err)
+	}
+
+	// Run ANALYZE on each table
+	for _, t := range tables {
+		analyzeQuery := fmt.Sprintf("ANALYZE %s.%s",
+			pq.QuoteIdentifier(t.schema),
+			pq.QuoteIdentifier(t.table))
+		if _, err := e.db.ExecContext(ctx, analyzeQuery); err != nil {
+			slog.Warn("failed to ANALYZE table",
+				slog.String("schema", t.schema),
+				slog.String("table", t.table),
+				slog.Any("error", err))
+			// Continue with other tables
+		}
+	}
+
+	return nil
 }
 
 func (e *Extractor) getTables(
