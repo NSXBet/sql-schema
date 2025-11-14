@@ -44,3 +44,7 @@ config.local.*
 dist/
 build/
 bin/
+
+# Ai
+.claude/
+.cursor/
