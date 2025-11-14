@@ -54,6 +54,54 @@ func main() {
 }
 ```
 
+## Configuration Options
+
+### ExtractorOptions
+
+You can configure the extraction behavior using `NewExtractorWithOptions` or the fluent `WithRunAnalyze()` method:
+
+```go
+// Method 1: Using ExtractorOptions
+opts := &postgres.ExtractorOptions{
+    RunAnalyze: true, // Run ANALYZE before extraction for accurate row counts
+}
+extractor := postgres.NewExtractorWithOptions(db, "mydb", opts)
+schema, err := extractor.ExtractSchema(context.Background())
+
+// Method 2: Using fluent API (recommended)
+extractor := postgres.NewExtractor(db, "mydb").WithRunAnalyze()
+schema, err := extractor.ExtractSchema(context.Background())
+```
+
+**Available Options:**
+
+- **`RunAnalyze bool`**: Run `ANALYZE` on all tables before extraction to ensure row count statistics (`reltuples`) are current.
+  - **Default**: `false` (opt-in for performance)
+  - **Use when**: You need accurate row counts and tables haven't been analyzed recently
+  - **Performance**: May take 1-120 seconds depending on database size (see performance notes below)
+  - **Failures**: Non-fatal - logged as warnings, extraction continues
+
+### Performance Considerations for ANALYZE
+
+When `RunAnalyze: true`, the extractor runs PostgreSQL's `ANALYZE` command on all tables:
+
+- **Small databases (< 1GB)**: ~2-3 seconds
+- **Medium databases (10GB)**: ~6-8 seconds
+- **Large databases (100GB)**: ~15-25 seconds
+- **Very large (1TB)**: ~60-120 seconds
+
+Cache status significantly impacts performance (5-15x difference between cold/warm cache).
+
+**When to enable:**
+- After bulk data loads
+- When row count accuracy is critical
+- For databases without regular autovacuum
+
+**When to skip:**
+- Autovacuum is configured and running regularly
+- Performance is more important than perfect accuracy
+- Database has tens/hundreds of large tables
+
 ## API
 
 ### NewExtractor
@@ -62,7 +110,9 @@ func main() {
 func NewExtractor(db *sql.DB, databaseName string) *Extractor
 ```
 
-Creates a new PostgreSQL schema extractor.
+Creates a new PostgreSQL schema extractor with default options.
+
+**Deprecated**: Use `NewExtractorWithOptions` for more control.
 
 **Parameters:**
 - `db`: Active `*sql.DB` connection to the PostgreSQL server
@@ -70,6 +120,39 @@ Creates a new PostgreSQL schema extractor.
 
 **Returns:**
 - `*Extractor`: Ready-to-use extractor instance
+
+### NewExtractorWithOptions
+
+```go
+func NewExtractorWithOptions(db *sql.DB, databaseName string, opts *ExtractorOptions) *Extractor
+```
+
+Creates a new PostgreSQL schema extractor with custom options.
+
+**Parameters:**
+- `db`: Active `*sql.DB` connection to the PostgreSQL server
+- `databaseName`: Name of the database to extract
+- `opts`: Configuration options (pass `nil` for defaults)
+
+**Returns:**
+- `*Extractor`: Ready-to-use extractor instance
+
+### WithRunAnalyze
+
+```go
+func (e *Extractor) WithRunAnalyze() *Extractor
+```
+
+Enables running ANALYZE on all tables before extraction. Returns the extractor for method chaining.
+
+**Returns:**
+- `*Extractor`: The extractor instance (for chaining)
+
+**Example:**
+```go
+extractor := postgres.NewExtractor(db, "mydb").WithRunAnalyze()
+schema, err := extractor.ExtractSchema(ctx)
+```
 
 ### ListDatabases
 
