@@ -3,14 +3,27 @@
 clean:
 	@rm -rf *.out
 
+# Run unit tests only (fast, no Docker required)
 .PHONY: test
 test: unit coverage coverage-package
 
+# Run all tests (unit + integration, requires Docker for testcontainers)
+.PHONY: test-all
+test-all: unit integration coverage coverage-package
+
+# Run unit tests with coverage
 .PHONY: unit
 unit: gotestsum run-unit coverage coverage-package
 
 run-unit:
 	@gotestsum --format testdox --junitfile unit.xml -- --short --cover --covermode count --coverprofile coverage.unit.out ./...
+
+# Run integration tests (database extractor tests, requires Docker)
+.PHONY: integration
+integration: gotestsum run-integration
+
+run-integration:
+	@gotestsum --format testdox --junitfile integration.xml -- --run "Test.*Extractor|TestEndToEndWorkflow" --cover --covermode count --coverprofile coverage.integration.out ./...
 
 .PHONY: update-unit-snapshots
 update-unit-snapshots:

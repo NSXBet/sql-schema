@@ -56,6 +56,36 @@ jobs:
           name: codecov-umbrella
         continue-on-error: true
 
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Run integration tests
+        run: make integration
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: integration.xml
+
+      - name: Upload integration coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.integration.out
+          flags: integration
+          name: codecov-integration
+        continue-on-error: true
+
   build:
     name: Build
     runs-on: ubuntu-latest
