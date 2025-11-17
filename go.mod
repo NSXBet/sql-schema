@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	golang.org/x/text v0.30.0
+	golang.org/x/text v0.31.0
 )
 
 require (
