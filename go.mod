@@ -4,12 +4,12 @@ go 1.25.3
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	golang.org/x/text v0.30.0
+	golang.org/x/text v0.33.0
 )
 
 require (
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.1
 	github.com/testcontainers/testcontainers-go v0.39.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.39.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.39.0
