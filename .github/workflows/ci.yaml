@@ -49,7 +49,7 @@ jobs:
         run: make test
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: nsx-actions/codecov_codecov-action@v4
         with:
           files: ./coverage.out
           flags: unittests
@@ -79,7 +79,7 @@ jobs:
           path: integration.xml
 
       - name: Upload integration coverage
-        uses: codecov/codecov-action@v4
+        uses: nsx-actions/codecov_codecov-action@v4
         with:
           files: ./coverage.integration.out
           flags: integration
