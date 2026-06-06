@@ -685,7 +685,7 @@ func (e *Extractor) getForeignKeys(txn *sql.Tx) (map[TableKey][]*schemaextract.F
 	defer func() { _ = rows.Close() }()
 
 	foreignKeyMap := make(map[TableKey][]*schemaextract.ForeignKey)
-	fkDefRe := regexp.MustCompile(`FOREIGN KEY \(([^)]+)\) REFERENCES\s+(?:(\w+)\.)?(\w+)\s*\(([^)]+)\)`)
+	fkDefRe := regexp.MustCompile(`FOREIGN KEY \(([^)]+)\) REFERENCES\s+(?:((?:"[^"]+"|\w+))\.)?((?:"[^"]+"|\w+))\s*\(([^)]+)\)`)
 
 	for rows.Next() {
 		var schemaName, tableName, fkName, fkDef, updateType, deleteType string
